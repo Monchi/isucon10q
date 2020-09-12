@@ -561,12 +561,12 @@ app.get("/api/recommended_estate/:id", async (req, res, next) => {
   const query = promisify(connection.query.bind(connection));
   try {
     const [chair] = await query("SELECT * FROM chair WHERE id = ?", [id]);
-    const w = chair.width;
-    const h = chair.height;
-    const d = chair.depth;
+    const edges = [chair.width, chair.height, chair.depth].sort((a, b) => b - a);
+    const w = edges[1]
+    const h = edges[2]
     const es = await query(
-      "SELECT * FROM estate where (door_width >= ? AND door_height>= ?) OR (door_width >= ? AND door_height>= ?) OR (door_width >= ? AND door_height>=?) OR (door_width >= ? AND door_height>=?) OR (door_width >= ? AND door_height>=?) OR (door_width >= ? AND door_height>=?) ORDER BY popularity DESC, id ASC LIMIT ?",
-      [w, h, w, d, h, w, h, d, d, w, d, h, LIMIT]
+      "SELECT * FROM estate where (door_width >= ? AND door_height>= ?) OR (door_width >= ? AND door_height>= ?) ORDER BY popularity DESC, id ASC LIMIT ?",
+      [w, h, h, w, LIMIT]
     );
     const estates = es.map((estate) => camelcaseKeys(estate));
     res.json({ estates });
