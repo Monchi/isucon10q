@@ -52,6 +52,7 @@ app.use(function (req, res, next) {
   if (BOT_REGEX.some((regex) => regex.test(agent))) {
     console.log("BOT blocked: " + agent)
     res.status(503).send();
+    return;
   }
   next()
 })
