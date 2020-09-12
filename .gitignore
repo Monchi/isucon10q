@@ -1,0 +1,5 @@
+/local
+/go
+/.*
+!/.gitignore
+node_modules
