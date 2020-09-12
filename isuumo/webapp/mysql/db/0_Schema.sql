@@ -36,3 +36,12 @@ CREATE TABLE isuumo.chair
     popularity  INTEGER         NOT NULL,
     stock       INTEGER         NOT NULL
 );
+
+CREATE TABLE isuumo.estate_search_log
+(
+    id          INTEGER         NOT NULL,
+    door_height        BOOLEAN     NOT NULL,
+    door_width        BOOLEAN     NOT NULL,
+    rent        BOOLEAN     NOT NULL,
+    features        BOOLEAN     NOT NULL
+);

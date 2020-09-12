@@ -1,5 +1,7 @@
 "use strict";
 
+require("newrelic");
+
 const express = require("express");
 const morgan = require("morgan");
 const multer = require("multer");
@@ -437,6 +439,10 @@ app.get("/api/estate/search", async (req, res, next) => {
     const estates = await query(
       `${sqlprefix}${searchCondition}${limitOffset}`,
       queryParams
+    );
+    await query(
+      "INSERT INTO estate_search_log(id, door_height, door_width, rent, features) VALUES(?,?,?,?,?)",
+      [1, !!doorHeightRangeId, !!doorWidthRangeId, !!rentRangeId, !!features]
     );
     res.json({
       count,
