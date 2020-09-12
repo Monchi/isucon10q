@@ -491,12 +491,26 @@ app.post("/api/estate/nazotte", async (req, res, next) => {
     },
   };
 
+  const coordinatesToText = util.format(
+    "'POLYGON((%s))'",
+    coordinates
+      .map((coordinate) =>
+        util.format("%f %f", coordinate.latitude, coordinate.longitude)
+      )
+      .join(",")
+  );
+
+  const sql = util.format(
+    "SELECT * FROM estate WHERE latitude <= ? AND latitude >= ? AND longitude <= ? AND longitude >= ? AND ST_Contains(ST_PolygonFromText(%s), ST_GeomFromText(CONCAT('POINT(', latitude, ' ', longitude, ')'))) ORDER BY popularity DESC, id ASC",
+    coordinatesToText
+  )
+
   const getConnection = promisify(db.getConnection.bind(db));
   const connection = await getConnection();
   const query = promisify(connection.query.bind(connection));
   try {
     const estates = await query(
-      "SELECT * FROM estate WHERE latitude <= ? AND latitude >= ? AND longitude <= ? AND longitude >= ? ORDER BY popularity DESC, id ASC",
+      sql,
       [
         boundingbox.bottomright.latitude,
         boundingbox.topleft.latitude,
@@ -505,35 +519,11 @@ app.post("/api/estate/nazotte", async (req, res, next) => {
       ]
     );
 
-    const estatesInPolygon = [];
-    for (const estate of estates) {
-      const point = util.format(
-        "'POINT(%f %f)'",
-        estate.latitude,
-        estate.longitude
-      );
-      const sql =
-        "SELECT * FROM estate WHERE id = ? AND ST_Contains(ST_PolygonFromText(%s), ST_GeomFromText(%s))";
-      const coordinatesToText = util.format(
-        "'POLYGON((%s))'",
-        coordinates
-          .map((coordinate) =>
-            util.format("%f %f", coordinate.latitude, coordinate.longitude)
-          )
-          .join(",")
-      );
-      const sqlstr = util.format(sql, coordinatesToText, point);
-      const [e] = await query(sqlstr, [estate.id]);
-      if (e && Object.keys(e).length > 0) {
-        estatesInPolygon.push(e);
-      }
-    }
-
     const results = {
       estates: [],
     };
     let i = 0;
-    for (const estate of estatesInPolygon) {
+    for (const estate of estates) {
       if (i >= NAZOTTE_LIMIT) {
         break;
       }
