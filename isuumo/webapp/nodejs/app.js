@@ -241,24 +241,21 @@ app.get("/api/chair/search", async (req, res, next) => {
   const pageNum = parseInt(page, 10);
   const perPageNum = parseInt(perPage, 10);
 
-  const sqlprefix = "SELECT * FROM chair WHERE ";
+  const sqlprefix = "SELECT SQL_CALC_FOUND_ROWS * FROM chair WHERE ";
   const searchCondition = searchQueries.join(" AND ");
   const limitOffset = " ORDER BY popularity DESC, id ASC LIMIT ? OFFSET ?";
-  const countprefix = "SELECT COUNT(*) as count FROM chair WHERE ";
+  const coundSql = "SELECT FOUND_ROWS() as count";
 
   const getConnection = promisify(db.getConnection.bind(db));
   const connection = await getConnection();
   const query = promisify(connection.query.bind(connection));
   try {
-    const [{ count }] = await query(
-      `${countprefix}${searchCondition}`,
-      queryParams
-    );
     queryParams.push(perPageNum, perPageNum * pageNum);
     const chairs = await query(
       `${sqlprefix}${searchCondition}${limitOffset}`,
       queryParams
     );
+    const [{ count }] = await query(coundSql);
     res.json({
       count,
       chairs: camelcaseKeys(chairs),
@@ -400,7 +397,7 @@ app.get("/api/estate/search", async (req, res, next) => {
     const featureConditions = features.split(",");
 
     for (const featureCondition of featureConditions) {
-      searchQueries.push("FIND_IN_SET(?, features)");
+      searchQueries.push("FIND_IN_SET(?, features) > 0");
       queryParams.push(featureCondition);
     }
   }
@@ -423,24 +420,21 @@ app.get("/api/estate/search", async (req, res, next) => {
   const pageNum = parseInt(page, 10);
   const perPageNum = parseInt(perPage, 10);
 
-  const sqlprefix = "SELECT * FROM estate WHERE ";
+  const sqlprefix = "SELECT SQL_CALC_FOUND_ROWS * FROM estate WHERE ";
   const searchCondition = searchQueries.join(" AND ");
   const limitOffset = " ORDER BY popularity DESC, id ASC LIMIT ? OFFSET ?";
-  const countprefix = "SELECT COUNT(*) as count FROM estate WHERE ";
+  const coundSql = "SELECT FOUND_ROWS() as count";
 
   const getConnection = promisify(db.getConnection.bind(db));
   const connection = await getConnection();
   const query = promisify(connection.query.bind(connection));
   try {
-    const [{ count }] = await query(
-      `${countprefix}${searchCondition}`,
-      queryParams
-    );
     queryParams.push(perPageNum, perPageNum * pageNum);
     const estates = await query(
       `${sqlprefix}${searchCondition}${limitOffset}`,
       queryParams
     );
+    const [{ count }] = await query(coundSql);
     res.json({
       count,
       estates: camelcaseKeys(estates),
