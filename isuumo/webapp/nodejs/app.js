@@ -53,6 +53,7 @@ app.use(function (req, res, next) {
     console.log("BOT blocked: " + agent)
     res.status(503).send();
   }
+  next()
 })
 
 app.use(morgan("combined"));
