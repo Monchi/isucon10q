@@ -28,9 +28,31 @@ const dbinfo = {
   connectionLimit: 10,
 };
 
+const BOT_REGEX = [
+  /ISUCONbot(-Mobile)?/,
+  /ISUCONbot-Image\//,
+  /Mediapartners-ISUCON/,
+  /ISUCONCoffee/,
+  /ISUCONFeedSeeker(Beta)?/,
+  /crawler \(https:\/\/isucon\.invalid\/(support\/faq\/|help\/jp\/)/,
+  /isubot/,
+  /Isupider/,
+  /Isupider(-image)?\+/,
+  /(bot|crawler|spider)(?:[-_ .\/;@()]|$)/i
+]
+
 const app = express();
 const db = mysql.createPool(dbinfo);
 app.set("db", db);
+
+app.use(function (req, res, next) {
+  const agent = req.get('User-Agent');
+  if (BOT_REGEX.some((regex) => regex.test(agent))) {
+    console.log("BOT blocked: " + agent)
+    res.status(503).send();
+  }
+  next()
+})
 
 app.use(morgan("combined"));
 app.use(express.json());
