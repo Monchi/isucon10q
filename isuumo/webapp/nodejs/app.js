@@ -564,14 +564,8 @@ app.get("/api/recommended_estate/:id", async (req, res, next) => {
     const edges = [chair.width, chair.height, chair.depth].sort((a, b) => b - a);
     const w = edges[1]
     const h = edges[2]
-    const sql = `
-SELECT * FROM (
-  SELECT * FROM estate WHERE door_width >= ? AND door_height>= ?
-  UNION
-  SELECT * FROM estate WHERE door_width >= ? AND door_height>= ?
-) t ORDER BY popularity DESC, id ASC LIMIT ?`
     const es = await query(
-      sql,
+      "SELECT * FROM estate where (door_width >= ? AND door_height>= ?) OR (door_width >= ? AND door_height>= ?) ORDER BY popularity DESC, id ASC LIMIT ?",
       [w, h, h, w, LIMIT]
     );
     const estates = es.map((estate) => camelcaseKeys(estate));
