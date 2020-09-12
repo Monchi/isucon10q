@@ -9,4 +9,5 @@
 /isuumo/webapp/ruby
 /isuumo/webapp/rust
 !/.gitignore
+!/.bash_profile
 node_modules
