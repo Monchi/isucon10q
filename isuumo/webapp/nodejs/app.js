@@ -398,8 +398,9 @@ app.get("/api/estate/search", async (req, res, next) => {
 
   if (!!features) {
     const featureConditions = features.split(",");
+
     for (const featureCondition of featureConditions) {
-      searchQueries.push("features LIKE CONCAT('%', ?, '%')");
+      searchQueries.push("FIND_IN_SET(?, features)");
       queryParams.push(featureCondition);
     }
   }
@@ -439,10 +440,6 @@ app.get("/api/estate/search", async (req, res, next) => {
     const estates = await query(
       `${sqlprefix}${searchCondition}${limitOffset}`,
       queryParams
-    );
-    await query(
-      "INSERT INTO estate_search_log(id, door_height, door_width, rent, features) VALUES(?,?,?,?,?)",
-      [1, !!doorHeightRangeId, !!doorWidthRangeId, !!rentRangeId, !!features]
     );
     res.json({
       count,
