@@ -66,6 +66,7 @@ app.post("/initialize", async (req, res, next) => {
       "0_Schema.sql",
       "1_DummyEstateData.sql",
       "2_DummyChairData.sql",
+      "estate_features.sql"
     ];
     const execfiles = dbfiles.map((file) => path.join(dbdir, file));
     for (const execfile of execfiles) {
@@ -73,6 +74,34 @@ app.post("/initialize", async (req, res, next) => {
         `mysql -h ${dbinfo.host} -u ${dbinfo.user} -p${dbinfo.password} -P ${dbinfo.port} ${dbinfo.database} < ${execfile}`
       );
     }
+
+    // const getConnection = promisify(db.getConnection.bind(db));
+    // const connection = await getConnection();
+    // const query = promisify(connection.query.bind(connection));
+    // try {
+    //   const estates = await query("SELECT * FROM estate");
+    //   for (let e of estates) {
+    //     const features = e.features.split(",");
+    //     if (!features) {
+    //       continue;
+    //     }
+    //     for (let f of features) {
+    //       if (f != '') {
+    //         await query(
+    //           "INSERT INTO estate_features(estate_id, feature) VALUES(?, ?)",
+    //           [e.id, f]
+    //         );
+    //       }
+    //     }
+    //   }
+    // } catch (e) {
+    //   console.log(e);
+    //   next(e);
+    //   return;
+    // } finally {
+    //   await connection.release();
+    // }
+
     res.json({
       language: "nodejs",
     });
@@ -396,11 +425,9 @@ app.get("/api/estate/search", async (req, res, next) => {
 
   if (!!features) {
     const featureConditions = features.split(",");
-
-    for (const featureCondition of featureConditions) {
-      searchQueries.push("FIND_IN_SET(?, features) > 0");
-      queryParams.push(featureCondition);
-    }
+    const sql = "EXISTS(SELECT 1 FROM estate_features WHERE estate_features.estate_id = estate.id AND estate_features.feature IN (?) HAVING COUNT(*) = ?)";
+    searchQueries.push(sql);
+    queryParams.push(featureConditions, featureConditions.length)
   }
 
   if (searchQueries.length === 0) {
@@ -421,7 +448,7 @@ app.get("/api/estate/search", async (req, res, next) => {
   const pageNum = parseInt(page, 10);
   const perPageNum = parseInt(perPage, 10);
 
-  const sqlprefix = "SELECT SQL_CALC_FOUND_ROWS * FROM estate WHERE ";
+  const sqlprefix = `SELECT SQL_CALC_FOUND_ROWS * FROM estate WHERE `;
   const searchCondition = searchQueries.join(" AND ");
   const limitOffset = " ORDER BY popularity DESC, id ASC LIMIT ? OFFSET ?";
   const coundSql = "SELECT FOUND_ROWS() as count";
@@ -441,6 +468,7 @@ app.get("/api/estate/search", async (req, res, next) => {
       estates: camelcaseKeys(estates),
     });
   } catch (e) {
+    console.log(e);
     next(e);
   } finally {
     await connection.release();
@@ -621,6 +649,13 @@ app.post("/api/estate", upload.single("estates"), async (req, res, next) => {
         "INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
         items
       );
+      const features = items[10].split(",");
+      for (let f of features) {
+        await query(
+          "INSERT INTO estate_features(estate_id, feature) VALUES(?,?)",
+          [items[0], f]
+        );
+      }
     }
     await commit();
     res.status(201);

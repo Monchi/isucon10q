@@ -23,6 +23,13 @@ CREATE TABLE isuumo.estate
     INDEX idx_door_width (door_width)
 );
 
+CREATE TABLE isuumo.estate_features
+(
+    estate_id INTEGER NOT NULL,
+    feature VARCHAR(64) NOT NULL,
+    INDEX idx_estate_id (estate_id)
+);
+
 CREATE TABLE isuumo.chair
 (
     id          INTEGER         NOT NULL PRIMARY KEY,
@@ -43,7 +50,8 @@ CREATE TABLE isuumo.chair
     INDEX idx_width (width),
     INDEX idx_depth (depth),
     INDEX idx_color (color),
-    INDEX idx_kind (kind)
+    INDEX idx_kind (kind),
+    INDEX idx_stock (stock)
 );
 
 CREATE TABLE isuumo.estate_search_log
